@@ -1,0 +1,175 @@
+<html>
+<head><script src="http://cdnjs.cloudflare.com/ajax/libs/three.js/r66/three.min.js"></script>
+</head>
+<body>
+
+<script type="x-shader/x-vertex" id="vertexShader">
+
+  void main() {
+
+    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+  }
+
+</script>
+
+<script type="x-shader/x-fragment" id="fragmentShader">
+  uniform sampler2D texture1;
+
+  void main() {
+                
+    gl_FragColor = texture2D( texture1, vec2( gl_FragCoord.x / 800.0, gl_FragCoord.y / 600.0 ) );
+
+  }
+
+</script>
+<script>
+
+  function curve( from, to, x ) {
+
+    return ( Math.sin( x ) * 0.5 + 0.5 ) * ( to - from ) + from;
+
+  }
+
+
+  function GeometryBlender( geom1, geom2 ) {
+
+    this.geom1 = geom1;
+    this.geom2 = geom2;
+
+  }
+  GeometryBlender.prototype.blendOnto = function( newGeom, timer ) {
+
+    for (var i = 0; i < newGeom.vertices.length; i++ ) {
+
+      newGeom.vertices[i].x = curve( this.geom1.vertices[i].x, this.geom2.vertices[i].x, timer );
+      newGeom.vertices[i].y = curve( this.geom1.vertices[i].y, this.geom2.vertices[i].y, timer );
+      newGeom.vertices[i].z = curve( this.geom1.vertices[i].z, this.geom2.vertices[i].z, timer );
+
+    }
+
+    newGeom.verticesNeedUpdate = true;
+    newGeom.normalsNeedUpdate = true;
+    newGeom.computeCentroids();
+    THREE.GeometryUtils.triangulateQuads( newGeom );
+    newGeom.computeBoundingBox();
+
+  };
+
+  var width = 800, height = 600;
+  var vertexShader   = document.getElementById( 'vertexShader' ).textContent;
+  var fragmentShader = document.getElementById( 'fragmentShader' ).textContent;
+
+
+
+  var container = document.createElement( 'div' );
+  document.body.appendChild( container );
+
+  var camera = new THREE.PerspectiveCamera( 45, width / height, 1, 10000 );
+  camera.position.y = 200;
+
+  var scene = new THREE.Scene();
+
+  var material = new THREE.ShaderMaterial( { 
+
+    vertexShader: vertexShader, 
+    fragmentShader: fragmentShader, 
+    uniforms: {
+      texture1: { type: "t", value: THREE.ImageUtils.loadTexture( "space.png" ) }
+    }
+
+  } );
+
+  scene.add( new THREE.AmbientLight( 0xffffff ) );
+
+  var geometryBlender1 = new GeometryBlender(
+    new THREE.BoxGeometry( 100, 100, 100, 4, 4, 4 ),
+    new THREE.BoxGeometry( 200, 50, 50, 4, 4, 4 ) );
+
+  var geometryBlender2 = new GeometryBlender(
+    new THREE.BoxGeometry( 100, 100, 100, 4, 4, 4 ),
+    new THREE.BoxGeometry( 200, 50, 50, 4, 4, 4 ) );
+
+  var cube1 = new THREE.Mesh( new THREE.BoxGeometry( 100, 200, 100, 4, 4, 4 ), material );
+    cube1.position.set( -200, 0, 0 );
+    scene.add( cube1 );
+
+
+  var cube2 = new THREE.Mesh( new THREE.BoxGeometry( 100, 200, 100, 4, 4, 4 ), material );
+    cube2.position.set( 300, 50, 0 );
+    scene.add( cube2 );
+
+  var renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer.setClearColor( 0xffffff, 100 );
+    renderer.setSize( width, height );
+
+  container.appendChild( renderer.domElement );
+
+
+  var timerAdd = 0;
+
+  function render() {
+
+    mouseHandler.velX = Math.min( Math.max( mouseHandler.velX, -100 ), 100 );
+    mouseHandler.velX *= 0.90;
+    timerAdd += mouseHandler.velX;
+
+    var timer = Date.now() * 0.00004 + timerAdd * 0.0002;
+
+    geometryBlender1.blendOnto( cube1.geometry, timer / 2 );
+    geometryBlender2.blendOnto( cube2.geometry, timer + 0.5 );
+
+    var len = 500 + (Math.cos( timer ) * 0.5 + 0.5) * 400;
+    camera.position.x = Math.cos( timer * 2 ) * len;
+    camera.position.z = Math.sin( timer * 2 ) * len;
+
+    camera.lookAt( scene.position );
+    
+    cube1.rotation.x = timer * 1.1;
+    cube1.rotation.y = timer * 3;
+    cube2.rotation.x = timer * 2.3;
+    cube2.rotation.y = timer * 3.5;
+
+    renderer.render( scene, camera );
+
+    requestAnimationFrame( render );
+  }
+
+  var mouseHandler = new (function(observer) {
+
+    var self = this;
+    this.isMouseDown = false;
+    this.velX = 0;
+    this.startX = 0;
+
+    observer.addEventListener('mousedown', function(ev) {
+
+      self.isMouseDown = true;
+      self.startX = ev.clientX;
+
+    });
+
+    observer.addEventListener('mousemove', function(ev) {
+
+      if (self.isMouseDown) {
+
+        self.velX += ev.clientX - self.startX;
+        self.startX = ev.clientX;
+
+      }
+
+    });
+
+    observer.addEventListener('mouseup', function(ev) {
+
+      self.isMouseDown = false;
+
+    });
+
+  })(window);
+
+
+  render();
+</script>
+</body>
+</html>
