@@ -70,12 +70,21 @@
 
   var scene = new THREE.Scene();
 
-  var material = new THREE.ShaderMaterial( { 
+  var material1 = new THREE.ShaderMaterial( { 
 
     vertexShader: vertexShader, 
     fragmentShader: fragmentShader, 
     uniforms: {
       texture1: { type: "t", value: THREE.ImageUtils.loadTexture( "space.png" ) }
+    }
+
+  } );
+  var material2 = new THREE.ShaderMaterial( { 
+
+    vertexShader: vertexShader, 
+    fragmentShader: fragmentShader, 
+    uniforms: {
+      texture1: { type: "t", value: THREE.ImageUtils.loadTexture( "space2.png" ) }
     }
 
   } );
@@ -90,12 +99,12 @@
     new THREE.BoxGeometry( 100, 100, 100, 4, 4, 4 ),
     new THREE.BoxGeometry( 200, 50, 50, 4, 4, 4 ) );
 
-  var cube1 = new THREE.Mesh( new THREE.BoxGeometry( 100, 200, 100, 4, 4, 4 ), material );
+  var cube1 = new THREE.Mesh( new THREE.BoxGeometry( 100, 200, 100, 4, 4, 4 ), material1 );
     cube1.position.set( -200, 0, 0 );
     scene.add( cube1 );
 
 
-  var cube2 = new THREE.Mesh( new THREE.BoxGeometry( 100, 200, 100, 4, 4, 4 ), material );
+  var cube2 = new THREE.Mesh( new THREE.BoxGeometry( 100, 200, 100, 4, 4, 4 ), material2 );
     cube2.position.set( 300, 50, 0 );
     scene.add( cube2 );
 
